@@ -8,6 +8,6 @@ public interface PrivilegeRepository extends JpaRepository<Privilege, Long> {
     Privilege findByName(String name);
 
     @Override
-    void delete(Privilege privilege);
+    void delete(Privilege privilege); // TODO: why is this being overridden?
 
 }

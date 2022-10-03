@@ -5,6 +5,7 @@ import com.mentoringsecurity.entity.Role;
 import com.mentoringsecurity.entity.User;
 import com.mentoringsecurity.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,12 +18,15 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Service("userDetailsService")
 @Transactional
 public class MyUserDetailsService implements UserDetailsService {
 
+    // TODO: field injection
     @Autowired
     private UserRepository userRepository;
 
@@ -32,6 +36,7 @@ public class MyUserDetailsService implements UserDetailsService {
     @Autowired
     private HttpServletRequest request;
 
+    // TODO: probably a left-over after copy-paste or refactoring
     public MyUserDetailsService() {
         super();
     }
@@ -64,6 +69,12 @@ public class MyUserDetailsService implements UserDetailsService {
     }
 
     private List<String> getPrivileges(final Collection<Role> roles) {
+        // TODO: can be rewritten as:
+//        return roles.stream().map(role -> Pair.of(role.getName(), role.getPrivileges()))
+//          .flatMap(tuple -> Stream.concat(Stream.of(tuple.getFirst()), tuple.getSecond().stream().map(Privilege::getName)))
+//          .collect(Collectors.toList());
+        // TODO: But in java this looks like shit, so just use your approach, this is just for your info :)
+
         final List<String> privileges = new ArrayList<>();
         final List<Privilege> collection = new ArrayList<>();
         for (final Role role : roles) {
@@ -78,11 +89,7 @@ public class MyUserDetailsService implements UserDetailsService {
     }
 
     private List<GrantedAuthority> getGrantedAuthorities(final List<String> privileges) {
-        final List<GrantedAuthority> authorities = new ArrayList<>();
-        for (final String privilege : privileges) {
-            authorities.add(new SimpleGrantedAuthority(privilege));
-        }
-        return authorities;
+        return privileges.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
     }
 
     private String getClientIP() {

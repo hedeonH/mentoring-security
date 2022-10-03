@@ -3,6 +3,7 @@ package com.mentoringsecurity.controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+//TODO: no blocked users endpoint
 @RestController
 public class InfoController {
 

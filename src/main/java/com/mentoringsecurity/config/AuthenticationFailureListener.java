@@ -12,12 +12,14 @@ import javax.servlet.http.HttpServletRequest;
 public class AuthenticationFailureListener implements
         ApplicationListener<AuthenticationFailureBadCredentialsEvent> {
 
+    //TODO: field injection
     @Autowired
     private HttpServletRequest request;
 
     @Autowired
     private LoginAttemptService loginAttemptService;
 
+    //TODO: can be replaced with simple @EventListener
     @Override
     public void onApplicationEvent(AuthenticationFailureBadCredentialsEvent e) {
         final String xfHeader = request.getHeader("X-Forwarded-For");
