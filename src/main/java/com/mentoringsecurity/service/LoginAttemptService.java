@@ -14,11 +14,13 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class LoginAttemptService {
 
+    // TODO: Better to extract this as a constructor parameter for better test-ability
     private static final int MAX_ATTEMPT = 10;
-    private LoadingCache<String, Integer> attemptsCache;
+
+    private final LoadingCache<String, Integer> attemptsCache;
 
     public LoginAttemptService() {
-        super();
+        super(); // TODO: ??? looks like a left-over after refactoring
         attemptsCache = CacheBuilder.newBuilder().
                 expireAfterWrite(1, TimeUnit.DAYS).build(new CacheLoader<>() {
                     public Integer load(String key) {
@@ -31,6 +33,7 @@ public class LoginAttemptService {
         attemptsCache.invalidate(key);
     }
 
+    // TODO: i'd suggest to synchronize this
     public void loginFailed(String key) {
         int attempts = 0;
         try {
