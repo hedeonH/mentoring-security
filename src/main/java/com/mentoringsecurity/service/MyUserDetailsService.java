@@ -4,7 +4,6 @@ import com.mentoringsecurity.entity.Privilege;
 import com.mentoringsecurity.entity.Role;
 import com.mentoringsecurity.entity.User;
 import com.mentoringsecurity.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,22 +24,18 @@ import java.util.stream.Stream;
 @Transactional
 public class MyUserDetailsService implements UserDetailsService {
 
-    // TODO: field injection
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private LoginAttemptService loginAttemptService;
+    private final LoginAttemptService loginAttemptService;
 
-    @Autowired
-    private HttpServletRequest request;
+    private final HttpServletRequest request;
 
-    // TODO: probably a left-over after copy-paste or refactoring
-    public MyUserDetailsService() {
+    public MyUserDetailsService(UserRepository userRepository, LoginAttemptService loginAttemptService, HttpServletRequest request) {
         super();
+        this.userRepository = userRepository;
+        this.loginAttemptService = loginAttemptService;
+        this.request = request;
     }
-
-    // API
 
     @Override
     public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
@@ -62,30 +56,21 @@ public class MyUserDetailsService implements UserDetailsService {
         }
     }
 
-    // UTIL
-
     private Collection<? extends GrantedAuthority> getAuthorities(final Collection<Role> roles) {
         return getGrantedAuthorities(getPrivileges(roles));
     }
 
     private List<String> getPrivileges(final Collection<Role> roles) {
-        // TODO: can be rewritten as:
-//        return roles.stream().map(role -> Pair.of(role.getName(), role.getPrivileges()))
-//          .flatMap(tuple -> Stream.concat(Stream.of(tuple.getFirst()), tuple.getSecond().stream().map(Privilege::getName)))
-//          .collect(Collectors.toList());
-        // TODO: But in java this looks like shit, so just use your approach, this is just for your info :)
-
-        final List<String> privileges = new ArrayList<>();
-        final List<Privilege> collection = new ArrayList<>();
-        for (final Role role : roles) {
-            privileges.add(role.getName());
-            collection.addAll(role.getPrivileges());
-        }
-        for (final Privilege item : collection) {
-            privileges.add(item.getName());
-        }
-
-        return privileges;
+        return roles.stream()
+                .map(role ->
+                        Pair.of(role.getName(), role.getPrivileges()))
+                .flatMap(tuple ->
+                        Stream.concat(Stream.of(tuple.getFirst()),
+                                tuple.getSecond().stream()
+                                        .map(Privilege::getName)
+                        )
+                )
+                .toList();
     }
 
     private List<GrantedAuthority> getGrantedAuthorities(final List<String> privileges) {

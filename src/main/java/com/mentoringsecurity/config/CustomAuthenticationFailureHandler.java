@@ -1,28 +1,33 @@
 package com.mentoringsecurity.config;
 
-import java.io.IOException;
-import java.util.Locale;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.MessageSource;
+import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.LocaleResolver;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Locale;
+
 @Component("authenticationFailureHandler")
-public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
+public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler
+        implements ApplicationEventPublisherAware {
 
-    @Autowired
-    private MessageSource messages;
+    private final MessageSource messages;
 
-    @Autowired
-    private LocaleResolver localeResolver;
+    private final LocaleResolver localeResolver;
+
+    public CustomAuthenticationFailureHandler(MessageSource messages, LocaleResolver localeResolver) {
+        this.messages = messages;
+        this.localeResolver = localeResolver;
+    }
 
     @Override
     public void onAuthenticationFailure(final HttpServletRequest request,
@@ -31,7 +36,8 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         setDefaultFailureUrl("/login?error=true");
 
         super.onAuthenticationFailure(request, response, exception);
-
+        var authenticationFailureBadCredentialsEvent = new AuthenticationFailureBadCredentialsEvent(null,exception);
+        eventPublisher.publishEvent(authenticationFailureBadCredentialsEvent);
         final Locale locale = localeResolver.resolveLocale(request);
 
         String errorMessage = messages.getMessage("message.badCredentials", null, locale);
@@ -52,5 +58,10 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
         request.getSession()
                 .setAttribute(WebAttributes.AUTHENTICATION_EXCEPTION, errorMessage);
+    }
+    protected ApplicationEventPublisher eventPublisher;
+
+    public void setApplicationEventPublisher(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 }

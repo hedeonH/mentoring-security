@@ -3,26 +3,25 @@ package com.mentoringsecurity.service;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
 
 
 @Service
 public class LoginAttemptService {
 
-    // TODO: Better to extract this as a constructor parameter for better test-ability
-    private static final int MAX_ATTEMPT = 10;
+    private static final int MAX_ATTEMPT = 3;
 
     private final LoadingCache<String, Integer> attemptsCache;
 
     public LoginAttemptService() {
-        super(); // TODO: ??? looks like a left-over after refactoring
+        // TODO: ??? looks like a left-over after refactoring
         attemptsCache = CacheBuilder.newBuilder().
-                expireAfterWrite(1, TimeUnit.DAYS).build(new CacheLoader<>() {
+                expireAfterWrite(3, TimeUnit.MINUTES).build(new CacheLoader<>() {
                     public Integer load(String key) {
                         return 0;
                     }
@@ -33,13 +32,12 @@ public class LoginAttemptService {
         attemptsCache.invalidate(key);
     }
 
-    // TODO: i'd suggest to synchronize this
-    public void loginFailed(String key) {
+    public synchronized void loginFailed(String key) {
         int attempts = 0;
         try {
             attempts = attemptsCache.get(key);
         } catch (ExecutionException e) {
-            attempts = 0;
+            LoggerFactory.getILoggerFactory().getLogger(this.toString()).debug(e.toString());
         }
         attempts++;
         attemptsCache.put(key, attempts);
@@ -51,5 +49,13 @@ public class LoginAttemptService {
         } catch (ExecutionException e) {
             return false;
         }
+    }
+
+    public synchronized List<String> getBlockedUsers() {
+        return attemptsCache.asMap()
+                .keySet()
+                .stream()
+                .filter(this::isBlocked)
+                .toList();
     }
 }

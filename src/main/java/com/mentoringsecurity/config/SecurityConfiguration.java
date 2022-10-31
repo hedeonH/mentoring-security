@@ -17,19 +17,26 @@ import javax.sql.DataSource;
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+    private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+
+    public SecurityConfiguration(CustomAuthenticationFailureHandler customAuthenticationFailureHandler) {
+        this.customAuthenticationFailureHandler = customAuthenticationFailureHandler;
+    }
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
                 .antMatchers("/about").permitAll()
+                .antMatchers("/blocked").permitAll()
                 .antMatchers("/info").hasRole("USER")
                 .antMatchers("/admin").hasRole("ADMIN")
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
                 .loginPage("/login")
-                .defaultSuccessUrl("/info",true)
-                .failureUrl("/login.html?error=true")
+                .defaultSuccessUrl("/info", true)
+                .failureHandler(customAuthenticationFailureHandler)
                 .permitAll()
                 .and()
                 .logout()

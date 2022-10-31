@@ -1,11 +1,17 @@
 package com.mentoringsecurity.controller;
 
+import com.mentoringsecurity.service.LoginAttemptService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-//TODO: no blocked users endpoint
+import java.util.List;
+
 @RestController
 public class InfoController {
+
+    @Autowired
+    LoginAttemptService loginAttemptService;
 
     @GetMapping("/info")
     public String getInfo(){
@@ -20,5 +26,10 @@ public class InfoController {
     @GetMapping("/admin")
     public String getAdmin(){
         return "Admin info";
+    }
+
+    @GetMapping("/blocked")
+    public List<String> getBlockedUsers(){
+        return loginAttemptService.getBlockedUsers();
     }
 }
